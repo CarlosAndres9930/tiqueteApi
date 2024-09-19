@@ -1,66 +1,72 @@
-import Tiquete from '../models/tiquete.js';
+import Tiquete from '../models/tiquete.js'; // Importar el modelo del tiquete
 
-// Get all documents from Tiquete collection
+//que permita listar los tiquetes
 export async function getTiquete(req, res) {
     try {
-        const tiquetes = await Tiquete.find();
-        res.json(tiquetes);
+        const cuentas = await Tiquete.find(); // Buscar todos los tiquetes en la base de datos
+        res.json(cuentas); // Enviar los tiquetes como respuesta en formato JSON
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ msg: 'Error retrieving Tiquetes', error });
+        res.status(500).json({ message: 'Error al obtener los tiquetes' }); // Manejo de errores
     }
 }
 
-// Post Create a document in the collection Tiquete
-export async function postTiquete(req, res) {
-    const body = req.body; // Get the body sent from Postman or a form
-    let msg = 'Tiquete inserted successfully';
-    
-    try {
-        const tiquete = new Tiquete(body); // Create the object Tiquete in RAM
-        await tiquete.save(); // Insert object in the collection
-        res.status(201).json({ msg, tiquete });
-    } catch (error) {
-        console.error(error);
-        res.status(400).json({ msg: 'Error inserting Tiquete', error });
-    }
-}
-
-// Put Update a document in the collection Tiquete
-export async function putTiquete(req, res) {
-    const { id } = req.params; // Get the ID from the route parameters
-    const { nombrePasajero, documentoPasajero, placaVehiculo, origen, destino } = req.body; // Destructuring
-    let msg = 'Tiquete updated successfully';
+// crear tiquete
+export async function PostTiquete(req, res) {
+    const { valor } = req.body; // Desestructurar valor del cuerpo de la solicitud
 
     try {
-        const updatedTiquete = await Tiquete.findByIdAndUpdate(
-            id,
-            { nombrePasajero, documentoPasajero, placaVehiculo, origen, destino },
-            { new: true, runValidators: true } // Return the updated document and run validators
-        );
-
-        if (!updatedTiquete) {
-            return res.status(404).json({ msg: 'Tiquete not found' });
+        // Verificar que el valor sea mayor a 0
+        if (valor <= 0) {
+            return res.status(400).json({ message: 'El valor debe ser mayor a 0' });
         }
 
-        res.json({ msg, updatedTiquete });
+        // Crear una nueva instancia de 'Tiquete' solo si el valor es válido
+        const newTiquete = new Tiquete(req.body); 
+        const savedTiquete = await newTiquete.save(); // Guardar el tiquete en la base de datos
+
+        res.status(201).json(savedTiquete); // Enviar el tiquete creado como respuesta con un código de estado 201
     } catch (error) {
-        console.error(error);
-        res.status(400).json({ msg: 'Error updating Tiquete', error });
+        res.status(500).json({ message: 'Error al crear el tiquete' }); // Manejo de errores
     }
 }
 
-// Delete a document from the collection Tiquete
-export async function deleteTiquete(req, res) {
-    const { id } = req.params; // Get the ID from the route parameters
+
+// editar tiquete
+export async function PutTiquete(req, res) {
     try {
-        const deletedTiquete = await Tiquete.findByIdAndDelete(id);
-        if (!deletedTiquete) {
-            return res.status(404).json({ msg: 'Tiquete not found' });
+        const id = req.params.id; // Obtener el id del tiquete a editar
+        const tiquete = await Tiquete.findByIdAndUpdate(id, req.body, { new: true });
+        res.json(tiquete); // Enviar el tiquete editado como respuesta
+    }
+    catch(error){
+        res.status(500).json({ message: 'Error al editar el tiquete' });
+    }
+}
+
+// eliminar tiquete
+export async function DeleteTiquete(req, res) {
+    try {
+        const id = req.params.id; // Obtener el id del tiquete a eliminar
+        await Tiquete.findByIdAndDelete(id); // Eliminar el tiquete de la base de datos
+        res.json({ message: 'Tiquete eliminado con éxito' });
+    }
+    catch(error){
+        res.status(500).json({ message: 'Error al eliminar el tiquete' });
+    }
+}
+
+// Consultar un tiquete por ID
+export async function getTiqueteById(req, res) {
+    try {
+        const id = req.params.id; // Obtener el id del tiquete a consultar
+        const tiquete = await Tiquete.findById(id); // Buscar el tiquete en la base de datos
+
+        if (!tiquete) {
+            return res.status(404).json({ message: 'Tiquete no encontrado' }); // Manejo de caso no encontrado
         }
-        res.json({ msg: 'Tiquete deleted successfully' });
+
+        res.json(tiquete); // Enviar el tiquete encontrado como respuesta
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ msg: 'Error deleting Tiquete', error });
+        res.status(500).json({ message: 'Error al obtener el tiquete' }); // Manejo de errores
     }
 }

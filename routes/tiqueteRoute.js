@@ -1,11 +1,12 @@
 import Router from 'express'
 const routesTiquete = Router()
 
-import { getTiquete, postTiquete, putTiquete, deleteTiquete } from '../controller/tiqueteController.js'
+import { getTiquete, PostTiquete, PutTiquete, DeleteTiquete, getTiqueteById } from '../controller/tiqueteController.js'
 
 routesTiquete.get('/', getTiquete)
-routesTiquete.post('/', postTiquete)
-routesTiquete.put('/', putTiquete)
-routesTiquete.delete('/:id', deleteTiquete)
+routesTiquete.post('/crear', PostTiquete)
+routesTiquete.put('/:id', PutTiquete)
+routesTiquete.delete('/:id', DeleteTiquete)
+routesTiquete.get('/:id', getTiqueteById)
 
 export default routesTiquete
