@@ -1,72 +1,124 @@
-import Tiquete from '../models/tiquete.js'; // Importar el modelo del tiquete
+import mongoose from 'mongoose';
+import Tiquete from '../models/tiquete.js'; 
 
-//que permita listar los tiquetes
+// Listar tiquetes
 export async function getTiquete(req, res) {
     try {
-        const cuentas = await Tiquete.find(); // Buscar todos los tiquetes en la base de datos
-        res.json(cuentas); // Enviar los tiquetes como respuesta en formato JSON
+        const cuentas = await Tiquete.find(); 
+        res.json(cuentas); 
     } catch (error) {
-        res.status(500).json({ message: 'Error al obtener los tiquetes' }); // Manejo de errores
+        res.status(500).json({ message: 'Error al obtener los tiquetes' });
     }
 }
 
-// crear tiquete
+// Crear tiquete
 export async function PostTiquete(req, res) {
-    const { valor } = req.body; // Desestructurar valor del cuerpo de la solicitud
+    const { valor } = req.body; 
 
     try {
-        // Verificar que el valor sea mayor a 0
         if (valor <= 0) {
             return res.status(400).json({ message: 'El valor debe ser mayor a 0' });
         }
 
-        // Crear una nueva instancia de 'Tiquete' solo si el valor es válido
         const newTiquete = new Tiquete(req.body); 
-        const savedTiquete = await newTiquete.save(); // Guardar el tiquete en la base de datos
+        const savedTiquete = await newTiquete.save();
 
-        res.status(201).json(savedTiquete); // Enviar el tiquete creado como respuesta con un código de estado 201
+        res.status(201).json(savedTiquete); 
     } catch (error) {
-        res.status(500).json({ message: 'Error al crear el tiquete' }); // Manejo de errores
+        res.status(500).json({ message: 'Error al crear el tiquete' });
     }
 }
 
+// Editar tiquete
+export async function putTiquete(req, res) {
+    const { id } = req.params;
 
-// editar tiquete
-export async function PutTiquete(req, res) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ message: 'ID no válido' });
+    }
+
+    const { valor } = req.body;
+
+    if (valor <= 0) {
+        return res.status(400).json({ message: 'El valor debe ser mayor a 0' });
+    }
+
     try {
-        const id = req.params.id; // Obtener el id del tiquete a editar
         const tiquete = await Tiquete.findByIdAndUpdate(id, req.body, { new: true });
-        res.json(tiquete); // Enviar el tiquete editado como respuesta
-    }
-    catch(error){
-        res.status(500).json({ message: 'Error al editar el tiquete' });
+
+        if (!tiquete) {
+            return res.status(404).json({ message: 'Tiquete no encontrado' });
+        }
+
+        res.json({ message: 'Tiquete actualizado exitosamente', tiquete });
+    } catch (error) {
+        res.status(500).json({ message: 'Problemas al actualizar el tiquete' });
     }
 }
 
-// eliminar tiquete
+// Eliminar tiquete
 export async function DeleteTiquete(req, res) {
+    const id = req.params.id;
     try {
-        const id = req.params.id; // Obtener el id del tiquete a eliminar
-        await Tiquete.findByIdAndDelete(id); // Eliminar el tiquete de la base de datos
+        const tiquete = await Tiquete.findByIdAndDelete(id);
+        if (!tiquete) {
+            return res.status(404).json({ message: 'Tiquete no encontrado' });
+        }
         res.json({ message: 'Tiquete eliminado con éxito' });
-    }
-    catch(error){
+    } catch (error) {
         res.status(500).json({ message: 'Error al eliminar el tiquete' });
     }
 }
 
 // Consultar un tiquete por ID
 export async function getTiqueteById(req, res) {
+    const id = req.params.id;
     try {
-        const id = req.params.id; // Obtener el id del tiquete a consultar
-        const tiquete = await Tiquete.findById(id); // Buscar el tiquete en la base de datos
+        const tiquete = await Tiquete.findById(id);
 
         if (!tiquete) {
-            return res.status(404).json({ message: 'Tiquete no encontrado' }); // Manejo de caso no encontrado
+            return res.status(404).json({ message: 'Tiquete no encontrado' });
         }
 
-        res.json(tiquete); // Enviar el tiquete encontrado como respuesta
+        res.json(tiquete);
     } catch (error) {
-        res.status(500).json({ message: 'Error al obtener el tiquete' }); // Manejo de errores
+        res.status(500).json({ message: 'Error al obtener el tiquete' });
+    }
+}
+
+// Consultar tiquetes por origen
+export async function getTiqueteByOrigen(req, res) {
+    const { origen } = req.params;
+    try {
+        const tiquetes = await Tiquete.find({ origen });
+        if (tiquetes.length === 0) {
+            return res.status(404).json({ message: 'No se encontraron tiquetes para ese origen' });
+        }
+
+        res.json(tiquetes);
+    } catch (error) {
+        res.status(500).json({ message: 'Problemas al obtener los tiquetes por origen' });
+    }
+}
+
+// Método que permite sumar todos los valores de los tiquetes
+export async function getTotalTiquete(req, res) {
+    try {
+        const total = await Tiquete.aggregate([{ $group: { _id:null, total: { $sum: "$valor" } } }]);
+        res.json(total.length > 0 ? total[0].total : 0);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al obtener el total de tiquetes' });
+    }
+}
+
+// Método para consultar la cantidad de tiquetes
+export async function getCountTiquete(req, res) {
+    try {
+        const count = await Tiquete.countDocuments();
+        res.json({ count });
+    } catch (error) {
+        console.error(error); 
+        res.status(500).json({ message: 'Error al obtener la cantidad de tiquetes' });
     }
 }
